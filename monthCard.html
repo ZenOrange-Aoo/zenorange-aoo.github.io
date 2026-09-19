@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月卡管理</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="monthCard.css">
+</head>
+<body>
+<div class="layout">
+    <!-- 左侧侧边栏：由 layout.js 注入，三页共用 -->
+    <div id="sidebar-mount"></div>
+    <div class="right-wrap">
+        <header class="top-header">系统管理员</header>
+        <div class="main">
+            <div class="toolbar">
+                <button class="btn" onclick="location.href='addMonthCard.html'">新增月卡</button>
+                <button class="del-btn" onclick="batchDel()">批量删除</button>
+            </div>
+            <div class="table-card">
+                <h3>月卡列表</h3>
+                <!-- 查询区域 -->
+                <div class="query-row">
+                    <label>车牌号：
+                        <input type="text" id="qCarNo" placeholder="请输入车牌号">
+                    </label>
+                    <label>状态：
+                        <select id="qStatus">
+                            <option value="">全部</option>
+                            <option value="0">可用</option>
+                            <option value="1">已过期</option>
+                        </select>
+                    </label>
+                    <button class="btn" onclick="queryList()">查询</button>
+                    <button class="btn btn-plain" onclick="resetQuery()">重置</button>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="checkAll" onclick="toggleAll(this)"></th>
+                            <th>序号</th>
+                            <th>车牌号</th>
+                            <th>车主</th>
+                            <th>手机号</th>
+                            <th>开始日期</th>
+                            <th>结束日期</th>
+                            <th>剩余天数</th>
+                            <th>支付金额（元）</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+                <!-- 分页条 -->
+                <div class="page-bar" id="pageBar"></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- 查看详情弹窗 -->
+<div class="modal-mask" id="viewModal">
+    <div class="modal-box">
+        <h3>月卡详情</h3>
+        <div id="viewBody"></div>
+        <div class="modal-foot">
+            <button class="btn" onclick="closeModal()">关闭</button>
+        </div>
+    </div>
+</div>
+<!--公共布局脚本（注入 sidebar + 菜单交互），必须在页面脚本之前-->
+<script src="layout.js"></script>
+<script src="data.js"></script>
+<script src="monthCard.js"></script>
+</body>
+</html>

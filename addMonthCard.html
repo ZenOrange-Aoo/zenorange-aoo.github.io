@@ -1,0 +1,131 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>月卡信息</title>
+    <link rel="stylesheet" href="common.css">
+    <link rel="stylesheet" href="monthCard.css">
+</head>
+<body>
+<div class="layout">
+    <!-- 左侧侧边栏：由 layout.js 注入，三页共用 -->
+    <div id="sidebar-mount"></div>
+    <div class="right-wrap">
+        <header class="top-header">系统管理员</header>
+        <div class="main">
+            <div class="form-card">
+                <h3 id="pageTitle">新增月卡</h3>
+                <!-- 车辆信息 -->
+                <h4 class="form-group-title">车辆信息</h4>
+                <div class="form-row">
+                    <label>车牌号：</label>
+                    <input type="text" id="carNo" placeholder="如：赣A12345">
+                    <label>车主姓名：</label>
+                    <input type="text" id="ownerName" placeholder="请输入车主姓名">
+                </div>
+                <div class="form-row" style="margin-top:12px;">
+                    <label>手机号：</label>
+                    <input type="text" id="phone" maxlength="11" placeholder="请输入11位手机号">
+                </div>
+                <!-- 缴费信息 -->
+                <h4 class="form-group-title">缴费信息</h4>
+                <div class="form-row">
+                    <label>开始日期：</label>
+                    <input type="date" id="startDate">
+                    <label>结束日期：</label>
+                    <input type="date" id="endDate">
+                </div>
+                <div class="form-row" style="margin-top:12px;">
+                    <label>支付金额（元）：</label>
+                    <input type="number" id="amount" min="0" step="0.01" placeholder="如：900">
+                </div>
+                <div class="form-row" style="margin-top:16px;">
+                    <button class="btn" onclick="saveData()">保存</button>
+                    <button class="btn btn-plain" onclick="resetForm()">重置</button>
+                    <button class="btn btn-plain" onclick="location.href='monthCard.html'">返回列表</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!--公共布局脚本（注入 sidebar + 菜单交互），必须在页面脚本之前-->
+<script src="layout.js"></script>
+<script src="data.js"></script>
+<script>
+//统一数据层
+var monthCardData = loadMonthCardData();
+//解析url查询参数：有id为编辑，无id为新增
+var params = new URLSearchParams(location.search);
+var editId = params.get('id');
+
+window.onload = function () {
+    if (editId !== null) {
+        //编辑模式：按id回填数据
+        var item = findCardById(Number(editId));
+        document.getElementById('pageTitle').innerText = '编辑月卡';
+        if (item) {
+            document.getElementById('carNo').value = item.carNo;
+            document.getElementById('ownerName').value = item.ownerName;
+            document.getElementById('phone').value = item.phone;
+            document.getElementById('startDate').value = item.startDate;
+            document.getElementById('endDate').value = item.endDate;
+            document.getElementById('amount').value = item.amount;
+        }
+    } else {
+        //新增模式：默认有效期今天起30天
+        document.getElementById('pageTitle').innerText = '新增月卡';
+        document.getElementById('startDate').value = formatDate(Date.now());
+        document.getElementById('endDate').value = formatDate(Date.now() + 30 * DAY_MS);
+    }
+};
+
+//重置：编辑模式回填原数据，新增模式清空
+function resetForm() {
+    location.reload();
+}
+
+function saveData() {
+    var carNo = document.getElementById('carNo').value.trim();
+    var ownerName = document.getElementById('ownerName').value.trim();
+    var phone = document.getElementById('phone').value.trim();
+    var startDate = document.getElementById('startDate').value;
+    var endDate = document.getElementById('endDate').value;
+    var amount = document.getElementById('amount').value.trim();
+
+    //表单校验（正则来自 data.js）
+    if (!carNo) { alert('请输入车牌号'); return; }
+    if (!PLATE_RE.test(carNo)) { alert('车牌号格式不正确，如：赣A12345'); return; }
+    if (!ownerName) { alert('请输入车主姓名'); return; }
+    if (!phone) { alert('请输入手机号'); return; }
+    if (!PHONE_RE.test(phone)) { alert('手机号格式不正确，需11位且1开头'); return; }
+    if (!startDate) { alert('请选择开始日期'); return; }
+    if (!endDate) { alert('请选择结束日期'); return; }
+    if (endDate <= startDate) { alert('结束日期必须晚于开始日期'); return; }
+    if (amount === '' || Number(amount) < 0) { alert('请输入正确的支付金额'); return; }
+
+    //新增用时间戳生成唯一id；编辑沿用原id
+    var id = editId === null ? Date.now() : Number(editId);
+    //车牌查重（编辑时排除自己）
+    for (var i = 0; i < monthCardData.length; i++) {
+        if (monthCardData[i].carNo === carNo && monthCardData[i].id !== id) {
+            alert('该车牌号已存在月卡，请勿重复添加');
+            return;
+        }
+    }
+    //统一走数据层组装，自动计算剩余天数和状态
+    var card = buildMonthCard(id, carNo, ownerName, phone, startDate, endDate, Number(amount));
+    if (editId === null) {
+        monthCardData.push(card);
+    } else {
+        for (var j = 0; j < monthCardData.length; j++) {
+            if (monthCardData[j].id === id) { monthCardData[j] = card; }
+        }
+    }
+    saveMonthCardData(monthCardData);
+    location.href = 'monthCard.html';
+}
+</script>
+</body>
+</html>
